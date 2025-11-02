@@ -1,49 +1,72 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 
-* {
-    font-family: 'Montserrat', sans-serif !important;
-}
+/* Typography base */
+* { font-family: 'Montserrat', sans-serif !important; }
 
-body, html {
+html, body {
     font-family: 'Montserrat', sans-serif !important;
+    font-size: 14px; /* Slightly larger for readability */
+    line-height: 1.35;
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Montserrat', sans-serif !important;
     font-weight: 600;
+    margin-top: 14px;
+    margin-bottom: 8px;
 }
 
-p, span, div, li, td, th, blockquote, pre {
-    font-family: 'Montserrat', sans-serif !important;
+h1 { font-size: 26px !important; }
+h2 { font-size: 22px !important; }
+
+p, span, div, li, blockquote, pre {
+    font-size: 14px;
 }
 
 code {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
     color: green;
     background-color: #f8f9fa;
-    padding: 2px 4px;
+    padding: 1px 3px;
     border-radius: 3px;
 }
 
-a, a:hover, a:visited {
-    font-family: 'Montserrat', sans-serif !important;
-}
-
-strong, b, em, i {
-    font-family: 'Montserrat', sans-serif !important;
-}
+a, a:hover, a:visited { font-family: 'Montserrat', sans-serif !important; }
+strong, b, em, i { font-family: 'Montserrat', sans-serif !important; }
 
 ul, ol, dl {
-    font-family: 'Montserrat', sans-serif !important;
+    padding-left: 20px;
+    margin-top: 4px;
+    margin-bottom: 4px;
 }
 
+/* Compact table layout */
 table {
-    font-family: 'Montserrat', sans-serif !important;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: 5px; /* Extra compact table text */
 }
 
-input, textarea, select, button {
-    font-family: 'Montserrat', sans-serif !important;
+th, td {
+    padding: 0; /* Ultra-tight padding */
+    border: 1px solid #e5e7eb;
+    vertical-align: top;
+    word-break: break-word;
+    font-size: 5px; /* Ensure cells use compact size */
+    line-height: 1;
+}
+
+/* Reduce horizontal padding specifically for header cells */
+th {
+    padding: 0; /* No extra padding on headers */
+}
+
+/* Trim spacing of the info box without touching content */
+div[style*="border-left: 4px solid #0e4378"] {
+    padding: 10px !important;
+    margin: 12px 0 !important;
+    border-radius: 6px !important;
 }
 </style>
 
@@ -57,20 +80,19 @@ input, textarea, select, button {
 
 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #0e4378; margin: 20px 0;">
 <strong>Group:</strong> 11  <br/>
-<strong>GitHub Repository:</strong> <a href="https://github.com/tsaichen1o/jc-citibike-vis">https://github.com/tsaichen1o/jc-citibike-vis</a>
 </div>
 
 ## <span id="project-vision" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">A. Title & Source</span>
 
 -   **Dataset Title:** Citi Bike NYC System Data (JC-202509-citibike-tripdata)
--   **Primary URL:** https://citibikenyc.com/system-data
+-   **Primary URL:** [https://citibikenyc.com/system-data](https://citibikenyc.com/system-data)
 -   **Publisher/Author:** Citi Bike NYC
 -   **Publication/Last Update Date:** Oct 6th 2025
 -   **License/Usage Terms:** [NYCBS Data Use Policy](https://www.citibikenyc.com/data-sharing-policy)
 
 ## <span id="project-timeline--milestones" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">B. Motivation</span>
 
-The Citi Bike dataset interests us because it captures the dynamic rhythms of urban mobility and reveals how people navigate shared infrastructure. Its rich temporal and spatial dimension make it ideal for exploring behavioral patterns and optimizing transportation systems. Two questions we aim to explore are: 1. How do member and casual users differ in their riding activity across hours of the day? 2. What are the most common origin-destination routes based on geographic coordinates?
+This dataset shows city travel patterns and how people use shared bikes and stations. Its rich temporal and spatial dimension make it ideal for exploring behavioral patterns and optimizing transportation systems. Two questions we aim to explore are: (1) How do member and casual users differ in their riding activity across hours of the day? (2) What are the most common origin-destination routes based on geographic coordinates?
 
 ## <span id="system-architecture" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">C. Scope & Granularity</span>
 
@@ -78,21 +100,12 @@ Our dataset contains about 100k records, each with 13 attributes. Every record r
 
 ## <span id="methodology--approach" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">D. Schema (Types & Ranges)</span>
 
-| Attribute            | Role   | Type   | T/S   | Domain/Range          |
-| -------------------- | ------ | ------ | ----- | --------------------- |
-| `ride_id`            | ID/Key | Cat.   | N     | ~110k unique IDs      |
-| `rideable_type`      | Attr.  | Cat.   | N     | {'classic_bike', ...} |
-| `started_at`         | Attr.  | Quant. | Y (T) | Datetime              |
-| `ended_at`           | Attr.  | Quant. | Y (T) | Datetime              |
-| `start_station_name` | Attr.  | Cat.   | N     | ~100 stations         |
-| `start_station_id`   | ID/Key | Cat.   | N     | e.g., 'JC005'         |
-| `end_station_name`   | Attr.  | Cat.   | N     | ~100 stations         |
-| `end_station_id`     | ID/Key | Cat.   | N     | e.g., 'JC008'         |
-| `start_lat`          | Attr.  | Quant. | Y (S) | 40.69-40.75           |
-| `start_lng`          | Attr.  | Quant. | Y (S) | -74.10 to -74.02      |
-| `end_lat`            | Attr.  | Quant. | Y (S) | (Similar)             |
-| `end_lng`            | Attr.  | Quant. | Y (S) | (Similar)             |
-| `member_casual`      | Attr.  | Cat.   | N     | {'member', 'casual'}  |
+|            | ride_id   | rideable_type        | started_at | ended_at | start_station_name | start_station_id | end_station_name | end_station_id | start_lat   | start_lng       | end_lat   | end_lng   | member_casual       |
+| ---------- | --------- | -------------------- | ---------- | -------- | ------------------ | ---------------- | ---------------- | -------------- | ----------- | --------------- | --------- | --------- | ------------------- |
+| **Role**   | ID/Key    | Attr.                | Attr.      | Attr.    | Attr.              | ID/Key           | Attr.            | ID/Key         | Attr.       | Attr.           | Attr.     | Attr.     | Attr.               |
+| **Type**   | Cat.      | Cat.                 | Quant.     | Quant.   | Cat.               | Cat.             | Cat.             | Cat.           | Quant.      | Quant.          | Quant.    | Quant.    | Cat.                |
+| **T/S**    | N         | N                    | Y (T)      | Y (T)    | N                  | N                | N                | N              | Y (S)       | Y (S)           | Y (S)     | Y (S)     | N                   |
+| **Domain** | ~110k IDs | {'classic_bike',...} | Datetime   | Datetime | ~100 stations      | e.g., 'JC005'    | ~100 stations    | e.g., 'JC008'  | 40.69-40.75 | -74.1 to -74.02 | (Similar) | (Similar) | {'member','casual'} |
 
 ## <span id="team-roles--responsibilities" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">F. Quality & Limitations</span>
 
