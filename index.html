@@ -659,14 +659,14 @@
 
 							showTooltip(
 								e,
-								`<strong>🚴 Route Flow</strong><br/>
-                    <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.2);">
-                    📍 From: ${sName}<br/>
-                    📍 To: ${eName}<br/>
-                    📊 Total: ${count} trips<br/>
-                    👤 Members: ${members} | 🚴 Casual: ${casual}<br/>
-                    📏 Est. Distance: ${avgDistance} km
-                    </div>`
+								`<strong>🚴 Route Flow</strong>
+								<div style="margin-top: 6px; display: grid; gap: 4px; font-size: 12px;">
+									<div style="display: flex; gap: 6px;"><span style="opacity:0.8">📍 From</span><span>${sName}</span></div>
+									<div style="display: flex; gap: 6px;"><span style="opacity:0.8">📍 To</span><span>${eName}</span></div>
+									<div style="display: flex; gap: 6px;"><span style="opacity:0.8">📊 Total</span><span>${count} trips</span></div>
+									<div style="display: flex; gap: 6px;"><span style="opacity:0.8">👤 Members</span><span>${members}</span><span style="opacity:0.8">| 🚴 Casual</span><span>${casual}</span></div>
+									<div style="display: flex; gap: 6px;"><span style="opacity:0.8">📏 Est. Distance</span><span>${avgDistance} km</span></div>
+								</div>`
 							);
 						})
 						.on("mouseout", function () {
@@ -743,15 +743,15 @@
 
 					showTooltip(
 						event,
-						`<strong>${d.name}</strong><br/>
-							<div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.2);">
-							📊 Total: ${stationTrips.length} trips<br/>
-							↗️ Out: ${outgoing} | ↘️ In: ${incoming}<br/>
-							⚖️ Balance: ${balanceText}<br/>
-							👤 Members: ${members} | 🚴 Casual: ${casual}<br/>
-							🕐 Peak: ${peakHour}:00<br/>
-							<span style="font-size: 11px; color: #dfe6e9; margin-top: 3px; display: block;">💡 Click for full details</span>
-							</div>`
+						`<strong>${d.name}</strong>
+						<div style="margin-top: 6px; display: grid; gap: 4px; font-size: 12px;">
+							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">📊 Total</span><span>${stationTrips.length} trips</span></div>
+							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">↗️ Out</span><span>${outgoing}</span><span style="opacity:0.8">| ↘️ In</span><span>${incoming}</span></div>
+							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">⚖️ Balance</span><span>${balanceText}</span></div>
+							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">👤 Members</span><span>${members}</span><span style="opacity:0.8">| 🚴 Casual</span><span>${casual}</span></div>
+							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">🕐 Peak</span><span>${peakHour}:00</span></div>
+							<div style="font-size: 11px; color: #c5d7ff; margin-top: 2px;">💡 Click for full details</div>
+						</div>`
 					);
 				};
 

@@ -133,22 +133,28 @@ body {
 
 .tooltip {
 	position: absolute;
-	background: rgba(45, 52, 54, 0.95);
-	color: #fff;
-	padding: 10px 14px;
-	border-radius: 6px;
+	background: linear-gradient(
+		145deg,
+		rgba(14, 25, 40, 0.98),
+		rgba(22, 42, 68, 0.98)
+	);
+	color: #eef3ff;
+	padding: 12px 14px;
+	border-radius: 10px;
 	font-size: 13px;
 	pointer-events: none;
-	z-index: 1000;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-	max-width: 250px;
-	line-height: 1.6;
+	z-index: 1200;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+	border: 1px solid rgba(116, 185, 255, 0.25);
+	backdrop-filter: blur(4px);
+	max-width: 260px;
+	line-height: 1.5;
 }
 
 .tooltip strong {
 	color: #74b9ff;
 	display: block;
-	margin-bottom: 4px;
+	margin-bottom: 6px;
 	font-size: 14px;
 }
 
@@ -456,18 +462,10 @@ option {
 
 /* --- Tooltip --- */
 .tooltip {
-	position: absolute;
-	text-align: center;
-	padding: 8px;
-	font-size: 12px;
-	background: rgba(0, 0, 0, 0.8);
-	color: white;
-	border-radius: 4px;
-	pointer-events: none;
+	/* unified tooltip styling (see primary definition above) */
+	text-align: left;
 	opacity: 0;
 	transition: opacity 0.2s;
-	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-	z-index: 100;
 }
 
 /* --- Map Interaction --- */
