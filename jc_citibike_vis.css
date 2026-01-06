@@ -238,7 +238,7 @@ select:hover {
 /* Station info panel */
 #station-info {
 	position: absolute;
-	top: 20px;
+	top: 72px;
 	left: 20px;
 	background: linear-gradient(
 		135deg,
@@ -248,7 +248,7 @@ select:hover {
 	padding: 14px 16px 12px 16px;
 	border-radius: 12px;
 	box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
-	width: 300px;
+	width: 286px;
 	max-width: 380px;
 	max-height: 70vh;
 	overflow-y: auto;
@@ -416,38 +416,108 @@ select:hover {
 }
 
 /* --- Search Bar --- */
+
 .search-container {
-	margin: 16px 24px 0 24px;
-	position: relative;
-	z-index: 10;
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	width: 320px;
+	z-index: 900;
+	margin: 0;
+}
+
+.search-box {
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	background: #fff;
+	border: 1px solid #dfe6e9;
+	box-shadow: 0 8px 18px rgba(0, 0, 0, 0.07);
+	border-radius: 12px;
+	padding: 4px 8px 4px 10px;
 }
 
 #station-search {
-	flex: 0 0 340px;
-	padding: 10px 16px 10px 40px;
-	font-size: 15px;
-	border: 1px solid #d8e2ec;
-	border-radius: 24px;
+	flex: 1;
+	padding: 8px 10px 8px 32px;
+	font-size: 14px;
+	border: none;
+	border-radius: 12px;
 	outline: none;
-	background: #fff
+	background: transparent
 		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2398a6b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='16.65' y1='16.65' x2='21' y2='21'/%3E%3C/svg%3E")
-		14px center no-repeat;
-	box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
-	transition: border-color 0.2s ease, box-shadow 0.2s ease,
-		transform 0.1s ease;
+		6px center no-repeat;
 }
 
 #station-search:focus {
-	border-color: #0984e3;
-	box-shadow: 0 10px 24px rgba(9, 132, 227, 0.15);
-	transform: translateY(-1px);
+	color: #0f4aa0;
 }
 
 #station-search::placeholder {
-	color: #94a1b2;
+	color: #9aa7b8;
+}
+
+#station-search-clear {
+	border: none;
+	background: #f5f8fc;
+	color: #5c6f92;
+	border-radius: 10px;
+	padding: 6px 8px;
+	cursor: pointer;
+	font-size: 13px;
+	transition: all 0.2s ease;
+}
+
+#station-search-clear:hover {
+	background: #e8f1ff;
+	color: #0f4aa0;
+}
+
+#station-search-clear:active {
+	transform: scale(0.97);
+}
+
+.suggestion-panel {
+	position: absolute;
+	top: 46px;
+	left: 0;
+	right: 0;
+	background: #ffffff;
+	border: 1px solid #e5ecf5;
+	border-radius: 14px;
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+	max-height: 260px;
+	overflow-y: auto;
+	padding: 8px;
+	display: none;
+	z-index: 20;
+}
+
+.suggestion-panel.show {
+	display: block;
+}
+
+.suggestion-item {
+	padding: 10px 12px;
+	border-radius: 10px;
+	font-size: 14px;
+	color: #2d3436;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition: all 0.18s ease;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.suggestion-item:hover {
+	background: #f4f8ff;
+	border-color: #dce7ff;
+}
+
+.suggestion-item .mini-meta {
+	font-size: 12px;
+	color: #8aa0b5;
 }
 
 /* Datalist styling is limited across browsers; soften option text for supported ones */

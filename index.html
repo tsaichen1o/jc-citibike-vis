@@ -60,16 +60,6 @@
 			</div>
 		</div>
 
-		<div id="search-container" class="search-container">
-			<input
-				type="text"
-				id="station-search"
-				list="station-list"
-				placeholder="Search Station..."
-			/>
-			<datalist id="station-list"></datalist>
-		</div>
-
 		<div id="main-container">
 			<div id="map-container">
 				<div id="map"></div>
@@ -111,6 +101,19 @@
 						<div class="meta-row" id="station-peak">🕐 Peak Hour: N/A</div>
 						<div class="meta-row muted" id="station-coords">📍 Coordinates: 0, 0</div>
 					</div>
+				</div>
+				<div id="search-container" class="search-container">
+					<div class="search-box">
+						<input
+							type="text"
+							id="station-search"
+							placeholder="Search a station"
+						/>
+						<button id="station-search-clear" aria-label="Clear search">
+							✕
+						</button>
+					</div>
+					<div id="station-suggestions" class="suggestion-panel"></div>
 				</div>
 				<!-- Legend -->
 				<div class="legend">
@@ -449,29 +452,73 @@
 			// --- Station search bar setup ---
 			function setupSearchBar() {
 				const searchInput = document.getElementById("station-search");
-				const dataList = document.getElementById("station-list");
+				const suggestionPanel = document.getElementById(
+					"station-suggestions"
+				);
+				const clearBtn = document.getElementById("station-search-clear");
 
-				dataList.innerHTML = "";
-				stations
-					.slice()
-					.sort((a, b) => a.name.localeCompare(b.name))
-					.forEach((station) => {
-						const opt = document.createElement("option");
-						opt.value = station.name;
-						dataList.appendChild(opt);
-					});
+				const renderSuggestions = (query = "") => {
+					const trimmed = query.trim().toLowerCase();
+					const matches = stations
+						.filter((s) => s.name.toLowerCase().includes(trimmed))
+						.slice(0, 12);
+					suggestionPanel.innerHTML = matches
+						.map(
+							(s) =>
+								`<div class="suggestion-item" data-name="${s.name.replace(
+									/"/g,
+									"&quot;"
+								)}"><span>${s.name}</span><span class="mini-meta">${s.lat.toFixed(
+									2
+								)}, ${s.lng.toFixed(2)}</span></div>`
+						)
+						.join("");
+					suggestionPanel.classList.toggle(
+						"show",
+						matches.length > 0
+					);
+				};
 
 				const handleSelection = (name) => {
 					const trimmed = name.trim();
 					selectStation(trimmed || null);
 					searchInput.value = trimmed;
+					suggestionPanel.classList.remove("show");
 				};
+
+				suggestionPanel.addEventListener("mousedown", (e) => {
+					const item = e.target.closest(".suggestion-item");
+					if (!item) return;
+					handleSelection(item.dataset.name || "");
+				});
+
+				searchInput.addEventListener("input", (e) => {
+					renderSuggestions(e.target.value);
+				});
+
+				searchInput.addEventListener("focus", (e) => {
+					renderSuggestions(e.target.value);
+				});
+
+				searchInput.addEventListener("blur", () => {
+					setTimeout(() => suggestionPanel.classList.remove("show"), 120);
+				});
+
+				clearBtn.addEventListener("click", () => {
+					searchInput.value = "";
+					suggestionPanel.classList.remove("show");
+					selectStation(null);
+				});
 
 				searchInput.addEventListener("change", (e) =>
 					handleSelection(e.target.value)
 				);
 				searchInput.addEventListener("keyup", (e) => {
 					if (e.key === "Enter") handleSelection(e.target.value);
+					if (e.key === "Escape") {
+						suggestionPanel.classList.remove("show");
+						searchInput.blur();
+					}
 				});
 			}
 
