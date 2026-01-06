@@ -79,76 +79,37 @@
 						×
 					</button>
 					<h4 id="station-name">Station Name</h4>
-					<div
-						style="
-							margin: 10px 0;
-							padding: 8px;
-							background: #f8f9fa;
-							border-radius: 4px;
-						"
-					>
-						<div
-							style="
-								font-size: 13px;
-								font-weight: 600;
-								color: #2d3436;
-								margin-bottom: 5px;
-							"
-						>
-							Trip Statistics
+					<div class="info-section">
+						<div class="section-title">Trip Statistics</div>
+						<div class="stat-grid">
+							<div class="stat-card">
+								<span class="stat-label">Total Trips</span>
+								<span id="station-trips" class="stat-value">0</span>
+							</div>
+							<div class="stat-card">
+								<span class="stat-label">Outgoing</span>
+								<span id="station-outgoing" class="stat-value">0</span>
+							</div>
+							<div class="stat-card">
+								<span class="stat-label">Incoming</span>
+								<span id="station-incoming" class="stat-value">0</span>
+							</div>
+							<div class="stat-card accent">
+								<span class="stat-label">Balance</span>
+								<span id="station-balance" class="stat-value">0</span>
+							</div>
 						</div>
-						<p id="station-trips" style="margin: 3px 0">
-							Total Trips: 0
-						</p>
-						<p id="station-outgoing" style="margin: 3px 0">
-							↗️ Outgoing: 0
-						</p>
-						<p id="station-incoming" style="margin: 3px 0">
-							↘️ Incoming: 0
-						</p>
-						<p id="station-balance" style="margin: 3px 0">
-							Balance: 0
-						</p>
 					</div>
-					<div style="margin: 10px 0">
-						<div
-							style="
-								font-size: 13px;
-								font-weight: 600;
-								color: #2d3436;
-								margin-bottom: 5px;
-							"
-						>
-							User Types
+					<div class="info-section">
+						<div class="section-title">User Types</div>
+						<div class="pill-row">
+							<span id="station-members" class="pill pill-member">Members: 0 (<p id="member-pct">0%</p>)</span>
+							<span id="station-casual" class="pill pill-casual">Casual: 0 (<span id="casual-pct">0%</span>)</span>
 						</div>
-						<p id="station-members" style="margin: 3px 0">
-							👤 Members: 0 (<span id="member-pct">0%</span>)
-						</p>
-						<p id="station-casual" style="margin: 3px 0">
-							🚴 Casual: 0 (<span id="casual-pct">0%</span>)
-						</p>
 					</div>
-					<div style="margin: 10px 0">
-						<p
-							id="station-peak"
-							style="
-								margin: 3px 0;
-								font-size: 12px;
-								color: #636e72;
-							"
-						>
-							🕐 Peak Hour: N/A
-						</p>
-						<p
-							id="station-coords"
-							style="
-								margin: 3px 0;
-								font-size: 11px;
-								color: #b2bec3;
-							"
-						>
-							📍 Coordinates: 0, 0
-						</p>
+					<div class="info-section meta">
+						<div class="meta-row" id="station-peak">🕐 Peak Hour: N/A</div>
+						<div class="meta-row muted" id="station-coords">📍 Coordinates: 0, 0</div>
 					</div>
 				</div>
 				<!-- Legend -->
@@ -946,18 +907,10 @@
 
 				document.getElementById("station-name").textContent =
 					stationName;
-				document.getElementById(
-					"station-trips"
-				).textContent = `Total Trips: ${total}`;
-				document.getElementById(
-					"station-outgoing"
-				).textContent = `↗️ Outgoing: ${outgoing}`;
-				document.getElementById(
-					"station-incoming"
-				).textContent = `↘️ Incoming: ${incoming}`;
-				document.getElementById(
-					"station-balance"
-				).textContent = `Balance: ${balanceText}`;
+				document.getElementById("station-trips").textContent = total;
+				document.getElementById("station-outgoing").textContent = outgoing;
+				document.getElementById("station-incoming").textContent = incoming;
+				document.getElementById("station-balance").textContent = balanceText;
 				document.getElementById("station-balance").style.color =
 					balance > 0
 						? "#00b894"
@@ -966,10 +919,10 @@
 						: "#636e72";
 				document.getElementById(
 					"station-members"
-				).innerHTML = `👤 Members: ${members} (<span id="member-pct">${memberPct}%</span>)`;
+				).innerHTML = `Members: ${members}<span id="member-pct">(${memberPct}%)</span>`;
 				document.getElementById(
 					"station-casual"
-				).innerHTML = `🚴 Casual: ${casual} (<span id="casual-pct">${casualPct}%</span>)`;
+				).innerHTML = `Casual: ${casual}<span id="casual-pct">(${casualPct}%)</span>`;
 				document.getElementById(
 					"station-peak"
 				).textContent = `🕐 Peak Hour: ${peakHourText}`;
