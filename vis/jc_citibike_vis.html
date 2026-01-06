@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jersey City Citi Bike Analysis - Interactive Visualization</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="jc_citibike_vis.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="header">
+    <div style="font-size: 20px; font-weight: bold;">Jersey City <span style="color:#0984e3">Citi Bike</span> Flow</div>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <div id="data-summary" style="font-size: 13px; color: #636e72;">
+            <span style="margin-right: 15px;"><strong id="total-trips">0</strong> trips</span>
+            <span style="margin-right: 15px;"><strong id="total-stations">0</strong> stations</span>
+            <span><strong id="member-ratio">0%</strong> members</span>
+        </div>
+        <div id="filter-status" style="font-size: 14px; background: #e1f5fe; padding: 5px 12px; border-radius: 20px; color: #01579b;">
+            Time Range: All Day (0:00 - 23:00)
+        </div>
+        <button id="reset-btn" style="padding: 5px 12px; border-radius: 4px; border: 1px solid #dfe6e9; background: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;" 
+                onmouseover="this.style.background='#f8f9fa'" 
+                onmouseout="this.style.background='#fff'">
+            🔄 Reset All
+        </button>
+    </div>
+</div>
+
+<div id="main-container">
+    <div id="map-container">
+        <div id="map"></div>
+        <!-- Station info panel -->
+        <div id="station-info">
+            <button class="close-btn" onclick="closeStationInfo()">×</button>
+            <h4 id="station-name">Station Name</h4>
+            <div style="margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                <div style="font-size: 13px; font-weight: 600; color: #2d3436; margin-bottom: 5px;">Trip Statistics</div>
+                <p id="station-trips" style="margin: 3px 0;">Total Trips: 0</p>
+                <p id="station-outgoing" style="margin: 3px 0;">↗️ Outgoing: 0</p>
+                <p id="station-incoming" style="margin: 3px 0;">↘️ Incoming: 0</p>
+                <p id="station-balance" style="margin: 3px 0;">Balance: 0</p>
+            </div>
+            <div style="margin: 10px 0;">
+                <div style="font-size: 13px; font-weight: 600; color: #2d3436; margin-bottom: 5px;">User Types</div>
+                <p id="station-members" style="margin: 3px 0;">👤 Members: 0 (<span id="member-pct">0%</span>)</p>
+                <p id="station-casual" style="margin: 3px 0;">🚴 Casual: 0 (<span id="casual-pct">0%</span>)</p>
+            </div>
+            <div style="margin: 10px 0;">
+                <p id="station-peak" style="margin: 3px 0; font-size: 12px; color: #636e72;">🕐 Peak Hour: N/A</p>
+                <p id="station-coords" style="margin: 3px 0; font-size: 11px; color: #b2bec3;">📍 Coordinates: 0, 0</p>
+            </div>
+        </div>
+        <!-- Legend -->
+        <div class="legend">
+            <div style="font-weight: 600; margin-bottom: 8px; color: #2d3436;">Flow Intensity</div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #009688; opacity: 0.3;"></div>
+                <span>Low</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #009688; opacity: 0.6;"></div>
+                <span>Medium</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #009688; opacity: 0.9;"></div>
+                <span>High</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="side-panel">
+        <h3>Top 10 Popular Stations</h3>
+        <div style="margin-bottom: 15px; font-size: 13px;">
+            Flow Filter: 
+            <select id="dir-select">
+                <option value="all">Total Flow (Both Directions)</option>
+                <option value="out">Outgoing Only</option>
+                <option value="in">Incoming Only</option>
+            </select>
+        </div>
+        <div id="bar-chart"></div>
+    </div>
+</div>
+
+<div id="bottom-panel">
+    <h3>24-Hour Ride Trends (Drag to filter time range)</h3>
+    <div id="line-chart"></div>
+</div>
+
+<div id="tooltip" class="tooltip" style="opacity: 0;"></div>
+
+<script>
+let allData = [], stations = [], leafletMap, d3Overlay;
+let selectedStation = null, hourFilter = [0, 23], viewMode = "all";
+
+// Color scale
+const flowColorScale = d3.interpolateGnBu;
+
+function initMap() {
+    // Render real map
+    leafletMap = L.map('map', {zoomControl: false}).setView([40.725, -74.045], 14);
+    L.control.zoom({ position: 'bottomleft' }).addTo(leafletMap);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(leafletMap);
+
+    L.svg().addTo(leafletMap);
+    d3Overlay = d3.select("#map").select("svg");
+}
+
+d3.csv("../data/JC-202509-citibike-tripdata-sample10000.csv").then(data => {
+    data.forEach(d => {
+        d.started_at = new Date(d.started_at);
+        d.hour = d.started_at.getHours();
+        d.start_lat = +d.start_lat; d.start_lng = +d.start_lng;
+        d.end_lat = +d.end_lat; d.end_lng = +d.end_lng;
+    });
+    allData = data;
+
+    const sMap = new Map();
+    data.forEach(d => {
+        if(!sMap.has(d.start_station_name)) 
+            sMap.set(d.start_station_name, {name: d.start_station_name, lat: d.start_lat, lng: d.start_lng});
+    });
+    stations = Array.from(sMap.values());
+
+    initMap();
+    initLineChart();
+    updateCharts();
+    
+    leafletMap.on("viewreset move", updateMapLayer);
+    
+    // Setup reset button
+    document.getElementById('reset-btn').addEventListener('click', resetAllFilters);
+});
+
+// --- Bottom line chart with enhanced interactivity ---
+function initLineChart() {
+    const margin = {top: 10, right: 30, bottom: 30, left: 50},
+          w = document.getElementById('line-chart').clientWidth - margin.left - margin.right,
+          h = 140 - margin.top - margin.bottom;
+
+    const svg = d3.select("#line-chart").append("svg")
+        .attr("width", w + margin.left + margin.right)
+        .attr("height", h + margin.top + margin.bottom)
+        .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const stats = Array.from({length: 24}, (_, i) => ({
+        h: i,
+        m: allData.filter(d => d.hour === i && d.member_casual === 'member').length,
+        c: allData.filter(d => d.hour === i && d.member_casual === 'casual').length
+    }));
+
+    const x = d3.scaleLinear().domain([0, 23]).range([0, w]);
+    const y = d3.scaleLinear().domain([0, d3.max(stats, d => Math.max(d.m, d.c))]).range([h, 0]);
+
+    svg.append("g").attr("transform", `translate(0,${h})`).call(d3.axisBottom(x).ticks(24).tickFormat(d => d+":00"));
+    
+    // Add member line
+    svg.append("path").datum(stats).attr("class", "line-member")
+        .attr("d", d3.line().x(d => x(d.h)).y(d => y(d.m)).curve(d3.curveBasis));
+    
+    // Add casual line
+    svg.append("path").datum(stats).attr("class", "line-casual")
+        .attr("d", d3.line().x(d => x(d.h)).y(d => y(d.c)).curve(d3.curveBasis));
+
+    // Add interactive dots for member line
+    svg.selectAll(".dot-member")
+        .data(stats)
+        .enter().append("circle")
+        .attr("class", "dot-member")
+        .attr("cx", d => x(d.h))
+        .attr("cy", d => y(d.m))
+        .attr("r", 4)
+        .attr("fill", "var(--member-color)")
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 2)
+        .style("cursor", "pointer")
+        .on("mouseover", function(e, d) {
+            d3.select(this).attr("r", 6);
+            showTooltip(e, `<strong>Hour: ${d.h}:00</strong><br/>Members: ${d.m} rides`);
+        })
+        .on("mouseout", function() {
+            d3.select(this).attr("r", 4);
+            hideTooltip();
+        });
+
+    // Add interactive dots for casual line
+    svg.selectAll(".dot-casual")
+        .data(stats)
+        .enter().append("circle")
+        .attr("class", "dot-casual")
+        .attr("cx", d => x(d.h))
+        .attr("cy", d => y(d.c))
+        .attr("r", 4)
+        .attr("fill", "var(--casual-color)")
+        .attr("stroke", "#fff")
+        .attr("stroke-width", 2)
+        .style("cursor", "pointer")
+        .on("mouseover", function(e, d) {
+            d3.select(this).attr("r", 6);
+            showTooltip(e, `<strong>Hour: ${d.h}:00</strong><br/>Casual: ${d.c} rides`);
+        })
+        .on("mouseout", function() {
+            d3.select(this).attr("r", 4);
+            hideTooltip();
+        });
+
+    const brush = d3.brushX().extent([[0, 0], [w, h]]).on("brush end", (e) => {
+        if (!e.selection) hourFilter = [0, 23];
+        else hourFilter = e.selection.map(x.invert).map(Math.round);
+        d3.select("#filter-status").text(`Time Range: ${hourFilter[0]}:00 - ${hourFilter[1]}:00`);
+        updateCharts();
+    });
+    svg.append("g").attr("class", "brush").call(brush);
+}
+
+function updateCharts() {
+    const filtered = allData.filter(d => d.hour >= hourFilter[0] && d.hour <= hourFilter[1]);
+    updateBarChart(filtered);
+    updateMapLayer();
+    updateDataSummary(filtered);
+}
+
+function updateDataSummary(data) {
+    const totalTrips = data.length;
+    const uniqueStations = new Set([...data.map(d => d.start_station_name), ...data.map(d => d.end_station_name)]).size;
+    const members = data.filter(d => d.member_casual === 'member').length;
+    const memberRatio = totalTrips > 0 ? ((members / totalTrips) * 100).toFixed(0) : 0;
+    
+    document.getElementById('total-trips').textContent = totalTrips.toLocaleString();
+    document.getElementById('total-stations').textContent = uniqueStations;
+    document.getElementById('member-ratio').textContent = memberRatio + '%';
+}
+
+function resetAllFilters() {
+    hourFilter = [0, 23];
+    selectedStation = null;
+    viewMode = 'all';
+    d3.select('#dir-select').property('value', 'all');
+    d3.select('#filter-status').text('Time Range: All Day (0:00 - 23:00)');
+    closeStationInfo();
+    updateCharts();
+    
+    // Reset brush
+    d3.select('.brush').call(d3.brushX().clear);
+}
+
+// --- Right side optimized bar chart with exact values ---
+function updateBarChart(data) {
+    const counts = d3.rollup(data, v => v.length, d => d.start_station_name);
+    const sorted = Array.from(counts, ([name, count]) => ({name, count}))
+        .sort((a,b) => b.count - a.count).slice(0, 10);
+
+    const margin = {top: 10, right: 50, bottom: 20, left: 140},
+          w = 380 - margin.left - margin.right,
+          h = 420 - margin.top - margin.bottom;
+
+    d3.select("#bar-chart").selectAll("svg").remove();
+    const svg = d3.select("#bar-chart").append("svg")
+        .attr("width", w + margin.left + margin.right)
+        .attr("height", h + margin.top + margin.bottom)
+        .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear().domain([0, d3.max(sorted, d => d.count) || 10]).range([0, w]);
+    const y = d3.scaleBand().domain(sorted.map(d => d.name)).range([0, h]).padding(0.3);
+
+    svg.append("g").call(d3.axisLeft(y).tickSize(0)).select(".domain").remove();
+
+    // Add bars with smooth transitions
+    const bars = svg.selectAll(".bar").data(sorted).enter().append("rect")
+        .attr("class", "bar")
+        .attr("y", d => y(d.name))
+        .attr("height", y.bandwidth())
+        .attr("x", 0)
+        .attr("width", 0)
+        .attr("rx", 4)
+        .attr("fill", d => d.name === selectedStation ? "var(--accent-color)" : "#26a69a")
+        .style("opacity", d => d.name === selectedStation ? 1 : 0.6 + (d.count/d3.max(sorted, x=>x.count))*0.4)
+        .on("click", (e, d) => {
+            selectedStation = (selectedStation === d.name) ? null : d.name;
+            updateCharts();
+            if (selectedStation) {
+                showStationInfo(d.name);
+                centerMapOnStation(d.name);
+            } else {
+                closeStationInfo();
+            }
+        });
+    
+    // Animate bars appearing
+    bars.transition()
+        .duration(500)
+        .delay((d, i) => i * 30)
+        .attr("width", d => x(d.count));
+
+    // Add value labels at the end of bars with fade-in animation
+    const labels = svg.selectAll(".bar-label")
+        .data(sorted)
+        .enter().append("text")
+        .attr("class", "bar-label")
+        .attr("x", 0)
+        .attr("y", d => y(d.name) + y.bandwidth() / 2)
+        .attr("dy", "0.35em")
+        .style("opacity", 0)
+        .text(d => d.count);
+    
+    // Animate labels appearing
+    labels.transition()
+        .duration(500)
+        .delay((d, i) => i * 30 + 200)
+        .attr("x", d => x(d.count) + 5)
+        .style("opacity", 1);
+}
+
+// --- Optimized map layer with enhanced interactivity ---
+function updateMapLayer() {
+    d3Overlay.selectAll("*").remove();
+    const group = d3Overlay.append("g");
+    const filtered = allData.filter(d => d.hour >= hourFilter[0] && d.hour <= hourFilter[1]);
+    
+    let flows = filtered;
+    if (selectedStation) {
+        flows = filtered.filter(d => viewMode === "all" ? 
+            (d.start_station_name === selectedStation || d.end_station_name === selectedStation) :
+            (viewMode === "out" ? d.start_station_name === selectedStation : d.end_station_name === selectedStation));
+    }
+
+    const routeCounts = d3.rollup(flows, v => v.length, d => `${d.start_station_name}|${d.end_station_name}`);
+    const maxVal = d3.max(Array.from(routeCounts.values())) || 1;
+
+    // Draw flow lines with animation
+    routeCounts.forEach((count, key) => {
+        const [sName, eName] = key.split("|");
+        const s = stations.find(x => x.name === sName), e = stations.find(x => x.name === eName);
+        if(!s || !e || sName === eName) return;
+
+        const startPt = leafletMap.latLngToLayerPoint([s.lat, s.lng]);
+        const endPt = leafletMap.latLngToLayerPoint([e.lat, e.lng]);
+        const dr = Math.sqrt(Math.pow(endPt.x-startPt.x,2) + Math.pow(endPt.y-startPt.y,2));
+
+        const flowLine = group.append("path")
+            .attr("class", "flow-line")
+            .attr("d", `M${startPt.x},${startPt.y}A${dr},${dr} 0 0,1 ${endPt.x},${endPt.y}`)
+            .style("fill", "none")
+            .style("stroke", selectedStation ? "var(--accent-color)" : "#009688")
+            .style("stroke-width", d3.scaleLinear().domain([1, maxVal]).range([1, 6])(count))
+            .style("stroke-opacity", 0)
+            .style("cursor", "pointer")
+            .style("stroke-dasharray", "5,5")
+            .on("mouseover", function(e) {
+                d3.select(this).style("stroke-opacity", 1);
+                const routeTrips = flows.filter(d => 
+                    d.start_station_name === sName && d.end_station_name === eName
+                );
+                const members = routeTrips.filter(d => d.member_casual === 'member').length;
+                const casual = routeTrips.filter(d => d.member_casual === 'casual').length;
+                const avgDistance = (dr * 0.0001).toFixed(2);
+                
+                showTooltip(e, `<strong>🚴 Route Flow</strong><br/>
+                    <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    📍 From: ${sName}<br/>
+                    📍 To: ${eName}<br/>
+                    📊 Total: ${count} trips<br/>
+                    👤 Members: ${members} | 🚴 Casual: ${casual}<br/>
+                    📏 Est. Distance: ${avgDistance} km
+                    </div>`);
+            })
+            .on("mouseout", function() {
+                d3.select(this).style("stroke-opacity", d3.scaleLinear().domain([1, maxVal]).range([0.2, 0.7])(count));
+                hideTooltip();
+            });
+        
+        // Animate flow line appearance with stagger
+        flowLine.transition()
+            .duration(600)
+            .delay(Math.random() * 300)
+            .style("stroke-opacity", d3.scaleLinear().domain([1, maxVal]).range([0.2, 0.7])(count));
+    });
+
+    // Draw station markers with animation
+    const markers = group.selectAll("circle")
+        .data(stations)
+        .enter().append("circle")
+        .attr("class", "station-marker")
+        .attr("cx", d => leafletMap.latLngToLayerPoint([d.lat, d.lng]).x)
+        .attr("cy", d => leafletMap.latLngToLayerPoint([d.lat, d.lng]).y)
+        .attr("r", 0)
+        .attr("fill", d => d.name === selectedStation ? "var(--accent-color)" : "var(--member-color)")
+        .attr("stroke", "#fff").attr("stroke-width", 2)
+        .style("cursor", "pointer")
+        .style("opacity", 0)
+        .on("click", (e, d) => {
+            selectedStation = (selectedStation === d.name) ? null : d.name;
+            updateCharts();
+            if (selectedStation) {
+                showStationInfo(d.name);
+                centerMapOnStation(d.name);
+            } else {
+                closeStationInfo();
+            }
+        })
+        .on("mouseover", function(e, d) {
+            if (d.name !== selectedStation) {
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr("r", 7);
+            }
+            const stationTrips = filtered.filter(trip => 
+                trip.start_station_name === d.name || trip.end_station_name === d.name
+            );
+            const outgoing = filtered.filter(trip => trip.start_station_name === d.name).length;
+            const incoming = filtered.filter(trip => trip.end_station_name === d.name).length;
+            const members = stationTrips.filter(trip => trip.member_casual === 'member').length;
+            const casual = stationTrips.filter(trip => trip.member_casual === 'casual').length;
+            const hourCounts = d3.rollup(stationTrips, v => v.length, d => d.hour);
+            const peakHour = hourCounts.size > 0 ? 
+                Array.from(hourCounts.entries()).sort((a, b) => b[1] - a[1])[0][0] : 'N/A';
+            const balance = outgoing - incoming;
+            const balanceText = balance > 0 ? `+${balance} (surplus)` : balance < 0 ? `${balance} (deficit)` : 'balanced';
+            
+            showTooltip(e, `<strong>${d.name}</strong><br/>
+                <div style="margin-top: 5px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.2);">
+                📊 Total: ${stationTrips.length} trips<br/>
+                ↗️ Out: ${outgoing} | ↘️ In: ${incoming}<br/>
+                ⚖️ Balance: ${balanceText}<br/>
+                👤 Members: ${members} | 🚴 Casual: ${casual}<br/>
+                🕐 Peak: ${peakHour}:00<br/>
+                <span style="font-size: 11px; color: #dfe6e9; margin-top: 3px; display: block;">💡 Click for full details</span>
+                </div>`);
+        })
+        .on("mouseout", function(e, d) {
+            if (d.name !== selectedStation) {
+                d3.select(this)
+                    .transition()
+                    .duration(200)
+                    .attr("r", 4);
+            }
+            hideTooltip();
+        });
+    
+    // Animate markers appearing with staggered timing
+    markers.transition()
+        .duration(500)
+        .delay((d, i) => i * 8)
+        .attr("r", d => d.name === selectedStation ? 8 : 4)
+        .style("opacity", 1);
+}
+
+// Tooltip functions
+function showTooltip(event, html) {
+    const tooltip = d3.select("#tooltip");
+    tooltip.html(html)
+        .style("opacity", 1)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 10) + "px");
+}
+
+function hideTooltip() {
+    d3.select("#tooltip").style("opacity", 0);
+}
+
+// Center map on selected station with smooth animation
+function centerMapOnStation(stationName) {
+    const station = stations.find(s => s.name === stationName);
+    if (station) {
+        leafletMap.flyTo([station.lat, station.lng], 15, {
+            duration: 1.2,
+            easeLinearity: 0.25
+        });
+    }
+}
+
+// Station info panel with enhanced statistics
+function showStationInfo(stationName) {
+    const filtered = allData.filter(d => d.hour >= hourFilter[0] && d.hour <= hourFilter[1]);
+    const stationTrips = filtered.filter(d => 
+        d.start_station_name === stationName || d.end_station_name === stationName
+    );
+    const outgoing = filtered.filter(d => d.start_station_name === stationName).length;
+    const incoming = filtered.filter(d => d.end_station_name === stationName).length;
+    const total = stationTrips.length;
+    const station = stations.find(s => s.name === stationName);
+    
+    // Calculate member/casual breakdown
+    const members = stationTrips.filter(d => d.member_casual === 'member').length;
+    const casual = stationTrips.filter(d => d.member_casual === 'casual').length;
+    const memberPct = total > 0 ? ((members / total) * 100).toFixed(0) : 0;
+    const casualPct = total > 0 ? ((casual / total) * 100).toFixed(0) : 0;
+    
+    // Calculate peak hour
+    const hourCounts = d3.rollup(stationTrips, v => v.length, d => d.hour);
+    let peakHourText = 'N/A';
+    if (hourCounts.size > 0) {
+        const [hour, count] = Array.from(hourCounts.entries()).sort((a, b) => b[1] - a[1])[0];
+        peakHourText = `${hour}:00 (${count} trips)`;
+    }
+    
+    // Calculate balance
+    const balance = outgoing - incoming;
+    const balanceText = balance >= 0 ? `+${balance}` : `${balance}`;
+    
+    document.getElementById('station-name').textContent = stationName;
+    document.getElementById('station-trips').textContent = `Total Trips: ${total}`;
+    document.getElementById('station-outgoing').textContent = `↗️ Outgoing: ${outgoing}`;
+    document.getElementById('station-incoming').textContent = `↘️ Incoming: ${incoming}`;
+    document.getElementById('station-balance').textContent = `Balance: ${balanceText}`;
+    document.getElementById('station-balance').style.color = balance > 0 ? '#00b894' : balance < 0 ? '#d63031' : '#636e72';
+    document.getElementById('station-members').innerHTML = `👤 Members: ${members} (<span id="member-pct">${memberPct}%</span>)`;
+    document.getElementById('station-casual').innerHTML = `🚴 Casual: ${casual} (<span id="casual-pct">${casualPct}%</span>)`;
+    document.getElementById('station-peak').textContent = `🕐 Peak Hour: ${peakHourText}`;
+    document.getElementById('station-coords').textContent = 
+        `📍 Coordinates: ${station.lat.toFixed(4)}, ${station.lng.toFixed(4)}`;
+    
+    document.getElementById('station-info').style.display = 'block';
+}
+
+function closeStationInfo() {
+    document.getElementById('station-info').style.display = 'none';
+    selectedStation = null;
+    updateCharts();
+}
+
+// Direction select handler
+d3.select("#dir-select").on("change", function() { 
+    viewMode = this.value; 
+    updateCharts(); 
+});
+</script>
+</body>
+</html>
