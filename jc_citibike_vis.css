@@ -79,6 +79,13 @@ body {
 	box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
 }
 
+#bar-chart {
+	max-height: 460px;
+	overflow-y: auto;
+	padding-right: 4px;
+	-webkit-overflow-scrolling: touch;
+}
+
 #bottom-panel {
 	height: 200px;
 	padding: 10px 25px;
