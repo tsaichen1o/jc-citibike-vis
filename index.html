@@ -757,22 +757,31 @@
 							trip.start_station_name === d.name ||
 							trip.end_station_name === d.name
 					);
-					const outgoing = filtered.filter(
-						(trip) => trip.start_station_name === d.name
+					
+					const outgoingMembers = filtered.filter(
+						(trip) => trip.start_station_name === d.name && trip.member_casual === "member"
 					).length;
-					const incoming = filtered.filter(
-						(trip) => trip.end_station_name === d.name
+					const incomingMembers = filtered.filter(
+						(trip) => trip.end_station_name === d.name && trip.member_casual === "member"
 					).length;
-					const members = stationTrips.filter(
-						(trip) => trip.member_casual === "member"
+					const members = outgoingMembers + incomingMembers;
+					
+					const outgoingCasual = filtered.filter(
+						(trip) => trip.start_station_name === d.name && trip.member_casual === "casual"
 					).length;
-					const casual = stationTrips.filter(
-						(trip) => trip.member_casual === "casual"
+					const incomingCasual = filtered.filter(
+						(trip) => trip.end_station_name === d.name && trip.member_casual === "casual"
 					).length;
+					const casual = outgoingCasual + incomingCasual;
+
+					const outgoing = outgoingMembers + outgoingCasual;
+					const incoming = incomingMembers + incomingCasual;
+					const total = outgoing + incoming;
+
 					const hourCounts = d3.rollup(
 						stationTrips,
 						(v) => v.length,
-						(d) => d.hour
+						(trip) => trip.hour
 					);
 					const peakHour =
 						hourCounts.size > 0
@@ -792,7 +801,7 @@
 						event,
 						`<strong>${d.name}</strong>
 						<div style="margin-top: 6px; display: grid; gap: 4px; font-size: 12px;">
-							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">📊 Total</span><span>${stationTrips.length} trips</span></div>
+							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">📊 Total</span><span>${total} trips</span></div>
 							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">↗️ Out</span><span>${outgoing}</span><span style="opacity:0.8">| ↘️ In</span><span>${incoming}</span></div>
 							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">⚖️ Balance</span><span>${balanceText}</span></div>
 							<div style="display: flex; gap: 6px;"><span style="opacity:0.8">👤 Members</span><span>${members}</span><span style="opacity:0.8">| 🚴 Casual</span><span>${casual}</span></div>
@@ -939,6 +948,7 @@
 					(d) => d.end_station_name === stationName && d.member_casual === "casual"
 				).length;
 				const casual = outgoingCasual + incomingCasual;
+
 				const memberPct =
 					total > 0 ? ((members / total) * 100).toFixed(0) : 0;
 				const casualPct =
