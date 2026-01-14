@@ -465,6 +465,33 @@
 						updateCharts();
 					});
 				svg.append("g").attr("class", "brush").call(brush);
+
+				// Add time indicator line (for play animation)
+				svg.append("line")
+					.attr("class", "time-indicator")
+					.attr("x1", 0)
+					.attr("x2", 0)
+					.attr("y1", 0)
+					.attr("y2", h)
+					.attr("stroke", "#e74c3c")
+					.attr("stroke-width", 3)
+					.attr("opacity", 0)
+					.style("pointer-events", "none");
+
+				// Add time indicator label
+				svg.append("text")
+					.attr("class", "time-indicator-label")
+					.attr("x", 0)
+					.attr("y", -5)
+					.attr("fill", "#e74c3c")
+					.attr("font-size", "12px")
+					.attr("font-weight", "bold")
+					.attr("text-anchor", "middle")
+					.attr("opacity", 0)
+					.style("pointer-events", "none");
+
+				// Store scale for later use
+				window.lineChartScale = { x, y, w, h };
 			}
 
 			function updateCharts() {
@@ -1003,24 +1030,67 @@
 				document.getElementById("play-text").textContent = "Pause";
 				currentPlayHour = 0;
 
+				// Show time indicator
+				if (window.lineChartScale) {
+					const svg = d3.select("#line-chart svg g");
+					svg.select(".time-indicator").attr("opacity", 0.8);
+					svg.select(".time-indicator-label").attr("opacity", 1);
+				}
+
 				playInterval = setInterval(() => {
-					if (currentPlayHour >= 23) {
+					if (currentPlayHour > 23) {
 						stopPlay();
 						return;
 					}
+					
 					hourFilter = [0, currentPlayHour];
 					d3.select("#filter-status").text(
-						`Time Range: 0:00 - ${currentPlayHour}:00`
+						`Time Range: 0:00 - ${currentPlayHour}:00 (Playing...)`
 					);
+					
+					// Animate time indicator
+					if (window.lineChartScale) {
+						const { x } = window.lineChartScale;
+						const svg = d3.select("#line-chart svg g");
+						const xPos = x(currentPlayHour);
+						
+						svg.select(".time-indicator")
+							.transition()
+							.duration(1500)
+							.ease(d3.easeLinear)
+							.attr("x1", xPos)
+							.attr("x2", xPos);
+						
+						svg.select(".time-indicator-label")
+							.transition()
+							.duration(1500)
+							.ease(d3.easeLinear)
+							.attr("x", xPos)
+							.text(`${currentPlayHour}:00`);
+					}
+					
 					updateCharts();
 					currentPlayHour++;
-				}, 500); // Update every 500ms
+				}, 2000); // Slowed down to 2 seconds per hour
 			}
 
 			function stopPlay() {
 				isPlaying = false;
 				document.getElementById("play-icon").textContent = "▶";
 				document.getElementById("play-text").textContent = "Play";
+				
+				// Hide time indicator
+				if (window.lineChartScale) {
+					const svg = d3.select("#line-chart svg g");
+					svg.select(".time-indicator").attr("opacity", 0);
+					svg.select(".time-indicator-label").attr("opacity", 0);
+				}
+				
+				// Update filter status text
+				d3.select("#filter-status").text(
+					`Time Range: ${hourFilter[0]}:00 - ${hourFilter[1]}:00`
+				);
+				
 				if (playInterval) {
 					clearInterval(playInterval);
 					playInterval = null;
