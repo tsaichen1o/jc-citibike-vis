@@ -224,7 +224,7 @@
 				d3Overlay = d3.select("#map").select("svg");
 			}
 
-			d3.csv("./data/JC-202509-citibike-tripdata-sample10000.csv").then(
+			d3.csv("./data/JC-202509-citibike-tripdata-sample.csv").then(
 				(data) => {
 					data.forEach((d) => {
 						d.started_at = new Date(d.started_at);
@@ -908,18 +908,25 @@
 				const filtered = allData.filter(
 					(d) => d.hour >= hourFilter[0] && d.hour <= hourFilter[1]
 				);
-				const stationTrips = filtered.filter(
-					(d) =>
-						d.start_station_name === stationName ||
-						d.end_station_name === stationName
-				);
 				const outgoing = filtered.filter(
 					(d) => d.start_station_name === stationName
 				).length;
 				const incoming = filtered.filter(
 					(d) => d.end_station_name === stationName
 				).length;
-				const total = stationTrips.length;
+				
+				// Total = outgoing + incoming - round trips (to avoid double counting)
+				// Count round trips (same start and end station)
+				// const roundTrips = filtered.filter(
+				// 	(d) => d.start_station_name === stationName && d.end_station_name === stationName
+				// ).length;
+
+				const total = outgoing + incoming;
+				const stationTrips = filtered.filter(
+					(d) =>
+						d.start_station_name === stationName ||
+						d.end_station_name === stationName
+				);
 				const station = stations.find((s) => s.name === stationName);
 
 				// Calculate member/casual breakdown
