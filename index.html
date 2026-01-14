@@ -914,13 +914,7 @@
 				const incoming = filtered.filter(
 					(d) => d.end_station_name === stationName
 				).length;
-				
-				// Total = outgoing + incoming - round trips (to avoid double counting)
-				// Count round trips (same start and end station)
-				// const roundTrips = filtered.filter(
-				// 	(d) => d.start_station_name === stationName && d.end_station_name === stationName
-				// ).length;
-
+				// Total = outgoing + incoming (round trips count twice: once as start, once as end)
 				const total = outgoing + incoming;
 				const stationTrips = filtered.filter(
 					(d) =>
@@ -929,13 +923,22 @@
 				);
 				const station = stations.find((s) => s.name === stationName);
 
-				// Calculate member/casual breakdown
-				const members = stationTrips.filter(
-					(d) => d.member_casual === "member"
+				// Calculate member/casual breakdown (count as outgoing + incoming to match total)
+				const outgoingMembers = filtered.filter(
+					(d) => d.start_station_name === stationName && d.member_casual === "member"
 				).length;
-				const casual = stationTrips.filter(
-					(d) => d.member_casual === "casual"
+				const incomingMembers = filtered.filter(
+					(d) => d.end_station_name === stationName && d.member_casual === "member"
 				).length;
+				const members = outgoingMembers + incomingMembers;
+				
+				const outgoingCasual = filtered.filter(
+					(d) => d.start_station_name === stationName && d.member_casual === "casual"
+				).length;
+				const incomingCasual = filtered.filter(
+					(d) => d.end_station_name === stationName && d.member_casual === "casual"
+				).length;
+				const casual = outgoingCasual + incomingCasual;
 				const memberPct =
 					total > 0 ? ((members / total) * 100).toFixed(0) : 0;
 				const casualPct =
