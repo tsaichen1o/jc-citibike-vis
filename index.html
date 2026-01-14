@@ -29,6 +29,12 @@
 					>
 					<span><strong id="member-ratio">0%</strong> members</span>
 				</div>
+				<div style="font-size: 13px; color: #636e72">
+					Date:
+					<select id="date-select" style="padding: 3px 8px; border-radius: 4px; border: 1px solid #dfe6e9; font-size: 13px;">
+						<option value="all">All Dates</option>
+					</select>
+				</div>
 				<div
 					id="filter-status"
 					style="
@@ -167,7 +173,30 @@
 		</div>
 
 		<div id="bottom-panel">
-			<h3>24-Hour Ride Trends (Drag to filter time range)</h3>
+			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+				<h3 style="margin: 0;">24-Hour Ride Trends (Drag to filter time range)</h3>
+				<button
+					id="play-btn"
+					style="
+						padding: 8px 16px;
+						border-radius: 4px;
+						border: 1px solid #0984e3;
+						background: #0984e3;
+						color: white;
+						cursor: pointer;
+						font-size: 14px;
+						transition: all 0.2s;
+						display: flex;
+						align-items: center;
+						gap: 6px;
+					"
+					onmouseover="this.style.background='#74b9ff'"
+					onmouseout="this.style.background='#0984e3'"
+				>
+					<span id="play-icon">▶</span>
+					<span id="play-text">Play</span>
+				</button>
+			</div>
 			<div id="line-chart"></div>
 		</div>
 
@@ -181,6 +210,10 @@
 			let selectedStation = null,
 				hourFilter = [0, 23],
 				viewMode = "all";
+			let selectedDate = "all";
+			let isPlaying = false,
+				playInterval = null,
+				currentPlayHour = 0;
 
 			function selectStation(name) {
 				if (!name) {
@@ -229,6 +262,7 @@
 					data.forEach((d) => {
 						d.started_at = new Date(d.started_at);
 						d.hour = d.started_at.getHours();
+						d.date = d.started_at.toISOString().split('T')[0]; // YYYY-MM-DD
 						d.start_lat = +d.start_lat;
 						d.start_lng = +d.start_lng;
 						d.end_lat = +d.end_lat;
@@ -236,6 +270,14 @@
 					});
 					allData = data;
 
+					// Populate date selector
+					const uniqueDates = [...new Set(data.map(d => d.date))].sort();
+					const dateSelect = d3.select("#date-select");
+					uniqueDates.forEach(date => {
+						dateSelect.append("option").attr("value", date).text(date);
+					});
+
+					// Create stations map
 					const sMap = new Map();
 					data.forEach((d) => {
 						if (!sMap.has(d.start_station_name))
@@ -258,6 +300,15 @@
 					document
 						.getElementById("reset-btn")
 						.addEventListener("click", resetAllFilters);
+
+					// Setup date selector
+					d3.select("#date-select").on("change", function() {
+						selectedDate = this.value;
+						updateCharts();
+					});
+
+					// Setup play button
+					document.getElementById("play-btn").addEventListener("click", togglePlay);
 				}
 			);
 
@@ -297,6 +348,20 @@
 					.domain([0, d3.max(stats, (d) => Math.max(d.m, d.c))])
 					.range([h, 0]);
 
+				// Add Y axis
+				svg.append("g")
+					.attr("class", "y-axis")
+					.call(d3.axisLeft(y).ticks(5))
+					.append("text")
+					.attr("transform", "rotate(-90)")
+					.attr("y", -40)
+					.attr("x", -h / 2)
+					.attr("fill", "#636e72")
+					.attr("font-size", "12px")
+					.style("text-anchor", "middle")
+					.text("Rides");
+
+				// Add X axis
 				svg.append("g")
 					.attr("transform", `translate(0,${h})`)
 					.call(
@@ -403,9 +468,13 @@
 			}
 
 			function updateCharts() {
-				const filtered = allData.filter(
+				let filtered = allData.filter(
 					(d) => d.hour >= hourFilter[0] && d.hour <= hourFilter[1]
 				);
+				// Apply date filter
+				if (selectedDate !== "all") {
+					filtered = filtered.filter(d => d.date === selectedDate);
+				}
 				updateBarChart(filtered);
 				updateMapLayer();
 				updateDataSummary(filtered);
@@ -437,11 +506,14 @@
 				hourFilter = [0, 23];
 				selectedStation = null;
 				viewMode = "all";
+				selectedDate = "all";
 				document.getElementById("station-search").value = "";
 				d3.select("#dir-select").property("value", "all");
+				d3.select("#date-select").property("value", "all");
 				d3.select("#filter-status").text(
 					"Time Range: All Day (0:00 - 23:00)"
 				);
+				stopPlay();
 				closeStationInfo();
 				updateCharts();
 
@@ -628,9 +700,13 @@
 			function updateMapLayer() {
 				d3Overlay.selectAll("*").remove();
 				const group = d3Overlay.append("g");
-				const filtered = allData.filter(
+				let filtered = allData.filter(
 					(d) => d.hour >= hourFilter[0] && d.hour <= hourFilter[1]
 				);
+				// Apply date filter
+				if (selectedDate !== "all") {
+					filtered = filtered.filter(d => d.date === selectedDate);
+				}
 
 				let flows = filtered;
 				if (selectedStation) {
@@ -912,11 +988,54 @@
 				}
 			}
 
+			// Play/Pause animation
+			function togglePlay() {
+				if (isPlaying) {
+					stopPlay();
+				} else {
+					startPlay();
+				}
+			}
+
+			function startPlay() {
+				isPlaying = true;
+				document.getElementById("play-icon").textContent = "⏸";
+				document.getElementById("play-text").textContent = "Pause";
+				currentPlayHour = 0;
+
+				playInterval = setInterval(() => {
+					if (currentPlayHour >= 23) {
+						stopPlay();
+						return;
+					}
+					hourFilter = [0, currentPlayHour];
+					d3.select("#filter-status").text(
+						`Time Range: 0:00 - ${currentPlayHour}:00`
+					);
+					updateCharts();
+					currentPlayHour++;
+				}, 500); // Update every 500ms
+			}
+
+			function stopPlay() {
+				isPlaying = false;
+				document.getElementById("play-icon").textContent = "▶";
+				document.getElementById("play-text").textContent = "Play";
+				if (playInterval) {
+					clearInterval(playInterval);
+					playInterval = null;
+				}
+			}
+
 			// Station info panel with enhanced statistics
 			function showStationInfo(stationName) {
-				const filtered = allData.filter(
+				let filtered = allData.filter(
 					(d) => d.hour >= hourFilter[0] && d.hour <= hourFilter[1]
 				);
+				// Apply date filter
+				if (selectedDate !== "all") {
+					filtered = filtered.filter(d => d.date === selectedDate);
+				}
 				const outgoing = filtered.filter(
 					(d) => d.start_station_name === stationName
 				).length;
