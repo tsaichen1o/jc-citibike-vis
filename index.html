@@ -157,7 +157,7 @@
 			</div>
 
 			<div id="side-panel">
-				<h3>Top 10 Popular Stations</h3>
+				<h3 id="bar-chart-title">Top 10 Popular Stations</h3>
 				<div style="margin-bottom: 15px; font-size: 13px">
 					Flow Filter:
 					<select id="dir-select">
@@ -623,11 +623,67 @@
 
 			// --- Right side optimized bar chart with exact values ---
 			function updateBarChart(data) {
-				const counts = d3.rollup(
-					data,
-					(v) => v.length,
-					(d) => d.start_station_name
-				);
+				let counts;
+				let chartTitle = "Top 10 Popular Stations";
+				
+				if (selectedStation) {
+					// Show top destinations/origins from/to selected station
+					let relevantTrips = [];
+					
+					if (viewMode === "all") {
+						// Show all connected stations (both incoming and outgoing)
+						relevantTrips = data.filter(
+							(d) => d.start_station_name === selectedStation || 
+							       d.end_station_name === selectedStation
+						);
+						// Count connections to other stations
+						const connections = new Map();
+						relevantTrips.forEach((d) => {
+							if (d.start_station_name === selectedStation && d.end_station_name !== selectedStation) {
+								connections.set(d.end_station_name, (connections.get(d.end_station_name) || 0) + 1);
+							} else if (d.end_station_name === selectedStation && d.start_station_name !== selectedStation) {
+								connections.set(d.start_station_name, (connections.get(d.start_station_name) || 0) + 1);
+							}
+						});
+						counts = connections;
+						chartTitle = `Top Connections from ${selectedStation}`;
+					} else if (viewMode === "out") {
+						// Show top destinations from selected station
+						relevantTrips = data.filter(
+							(d) => d.start_station_name === selectedStation && 
+							       d.end_station_name !== selectedStation
+						);
+						counts = d3.rollup(
+							relevantTrips,
+							(v) => v.length,
+							(d) => d.end_station_name
+						);
+						chartTitle = `Top Destinations from ${selectedStation}`;
+					} else { // viewMode === "in"
+						// Show top origins to selected station
+						relevantTrips = data.filter(
+							(d) => d.end_station_name === selectedStation && 
+							       d.start_station_name !== selectedStation
+						);
+						counts = d3.rollup(
+							relevantTrips,
+							(v) => v.length,
+							(d) => d.start_station_name
+						);
+						chartTitle = `Top Origins to ${selectedStation}`;
+					}
+				} else {
+					// Default: show overall top stations by outgoing trips
+					counts = d3.rollup(
+						data,
+						(v) => v.length,
+						(d) => d.start_station_name
+					);
+				}
+				
+				// Update chart title
+				document.getElementById("bar-chart-title").textContent = chartTitle;
+				
 				const sorted = Array.from(counts, ([name, count]) => ({
 					name,
 					count,
