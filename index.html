@@ -214,6 +214,7 @@
 			let isPlaying = false,
 				playInterval = null,
 				currentPlayHour = 0;
+			let lineChartSvg = null;
 
 			function selectStation(name) {
 				if (!name) {
@@ -331,6 +332,9 @@
 						"transform",
 						`translate(${margin.left},${margin.top})`
 					);
+
+				// Store reference for updates
+				lineChartSvg = svg;
 
 				const stats = Array.from({ length: 24 }, (_, i) => ({
 					h: i,
@@ -482,16 +486,169 @@
 				svg.append("text")
 					.attr("class", "time-indicator-label")
 					.attr("x", 0)
-					.attr("y", -5)
+					.attr("y", h / 2)
 					.attr("fill", "#e74c3c")
-					.attr("font-size", "12px")
+					.attr("font-size", "13px")
 					.attr("font-weight", "bold")
-					.attr("text-anchor", "middle")
+					.attr("text-anchor", "start")
 					.attr("opacity", 0)
-					.style("pointer-events", "none");
+					.style("pointer-events", "none")
+					.style("background", "white")
+					.style("padding", "2px 6px");
 
-				// Store scale for later use
+				// Add legend for line chart
+				const legend = svg.append("g")
+					.attr("class", "line-chart-legend")
+					.attr("transform", `translate(${w - 180}, -5)`);
+
+				// Member legend
+				legend.append("line")
+					.attr("x1", 0)
+					.attr("x2", 20)
+					.attr("y1", 0)
+					.attr("y2", 0)
+					.attr("stroke", "var(--member-color)")
+					.attr("stroke-width", 3);
+
+				legend.append("text")
+					.attr("x", 25)
+					.attr("y", 4)
+					.attr("font-size", "12px")
+					.attr("fill", "#636e72")
+					.text("Members");
+
+				// Casual legend
+				legend.append("line")
+					.attr("x1", 90)
+					.attr("x2", 110)
+					.attr("y1", 0)
+					.attr("y2", 0)
+					.attr("stroke", "var(--casual-color)")
+					.attr("stroke-width", 3);
+
+				legend.append("text")
+					.attr("x", 115)
+					.attr("y", 4)
+					.attr("font-size", "12px")
+					.attr("fill", "#636e72")
+					.text("Casual");
+
+				// Store scale and stats for later use
 				window.lineChartScale = { x, y, w, h };
+				window.lineChartStats = stats;
+			}
+
+			function updateLineChart() {
+				if (!lineChartSvg) return;
+
+				// Get filtered data based on selected date and station
+				let filteredData = allData;
+				if (selectedDate !== "all") {
+					filteredData = filteredData.filter(d => d.date === selectedDate);
+				}
+				if (selectedStation) {
+					filteredData = filteredData.filter(d => 
+						d.start_station_name === selectedStation || 
+						d.end_station_name === selectedStation
+					);
+				}
+
+				// Recalculate stats with filtered data
+				const stats = Array.from({ length: 24 }, (_, i) => ({
+					h: i,
+					m: filteredData.filter(
+						(d) => d.hour === i && d.member_casual === "member"
+					).length,
+					c: filteredData.filter(
+						(d) => d.hour === i && d.member_casual === "casual"
+					).length,
+				}));
+
+				const { x, y, w, h } = window.lineChartScale;
+
+				// Update y scale domain
+				const newY = d3
+					.scaleLinear()
+					.domain([0, d3.max(stats, (d) => Math.max(d.m, d.c))])
+					.range([h, 0]);
+
+				// Update Y axis
+				lineChartSvg.select(".y-axis")
+					.transition()
+					.duration(500)
+					.call(d3.axisLeft(newY).ticks(5));
+
+				// Update member line
+				lineChartSvg.select(".line-member")
+					.datum(stats)
+					.transition()
+					.duration(500)
+					.attr(
+						"d",
+						d3
+							.line()
+							.x((d) => x(d.h))
+							.y((d) => newY(d.m))
+							.curve(d3.curveBasis)
+					);
+
+				// Update casual line
+				lineChartSvg.select(".line-casual")
+					.datum(stats)
+					.transition()
+					.duration(500)
+					.attr(
+						"d",
+						d3
+							.line()
+							.x((d) => x(d.h))
+							.y((d) => newY(d.c))
+							.curve(d3.curveBasis)
+					);
+
+				// Update member dots
+				const memberDots = lineChartSvg.selectAll(".dot-member").data(stats);
+				memberDots
+					.transition()
+					.duration(500)
+					.attr("cy", (d) => newY(d.m));
+
+				// Update casual dots
+				const casualDots = lineChartSvg.selectAll(".dot-casual").data(stats);
+				casualDots
+					.transition()
+					.duration(500)
+					.attr("cy", (d) => newY(d.c));
+
+				// Update tooltips on dots
+				lineChartSvg.selectAll(".dot-member")
+					.on("mouseover", function (e, d) {
+						d3.select(this).attr("r", 6);
+						showTooltip(
+							e,
+							`<strong>Hour: ${d.h}:00</strong><br/>Members: ${d.m} rides`
+						);
+					})
+					.on("mouseout", function () {
+						d3.select(this).attr("r", 4);
+						hideTooltip();
+					});
+
+				lineChartSvg.selectAll(".dot-casual")
+					.on("mouseover", function (e, d) {
+						d3.select(this).attr("r", 6);
+						showTooltip(
+							e,
+							`<strong>Hour: ${d.h}:00</strong><br/>Casual: ${d.c} rides`
+						);
+					})
+					.on("mouseout", function () {
+						d3.select(this).attr("r", 4);
+						hideTooltip();
+					});
+
+				// Store updated stats for play animation
+				window.lineChartStats = stats;
 			}
 
 			function updateCharts() {
@@ -505,6 +662,7 @@
 				updateBarChart(filtered);
 				updateMapLayer();
 				updateDataSummary(filtered);
+				updateLineChart();
 			}
 
 			function updateDataSummary(data) {
@@ -1105,10 +1263,14 @@
 					);
 					
 					// Animate time indicator
-					if (window.lineChartScale) {
-						const { x } = window.lineChartScale;
+					if (window.lineChartScale && window.lineChartStats) {
+						const { x, h } = window.lineChartScale;
 						const svg = d3.select("#line-chart svg g");
 						const xPos = x(currentPlayHour);
+						
+						// Get current hour's ride count
+						const currentStats = window.lineChartStats[currentPlayHour];
+						const totalRides = currentStats ? currentStats.m + currentStats.c : 0;
 						
 						svg.select(".time-indicator")
 							.transition()
@@ -1121,8 +1283,9 @@
 							.transition()
 							.duration(1500)
 							.ease(d3.easeLinear)
-							.attr("x", xPos)
-							.text(`${currentPlayHour}:00`);
+							.attr("x", xPos + 8)
+							.attr("y", h / 2)
+							.text(`${totalRides}`);
 					}
 					
 					updateCharts();
