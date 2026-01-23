@@ -65,22 +65,27 @@ The system follows the **Information Seeking Mantra**: *Overview first, zoom and
 - **Bottom:** A time-series chart for temporal trends and interactive filtering.
 - **Side:** A dynamic ranking chart for station-level performance and connectivity analysis.
 
-## Requirement 1: Views & Encodings
+## 1. Views & Encodings
 The implementation successfully encodes the data abstraction through coordinated visual marks and channels:
 
 * **Spatial View (Map):** Station locations are encoded as `points` (position). Flows are implemented as `curved arcs`, where `line width` and `opacity` represent trip volume (magnitude), facilitating the identification of major transit corridors.
 * **Temporal View (Line Chart):** Uses `position (vertical)` for trip counts and `position (horizontal)` for the 24-hour cycle. `Color hue` (Blue for Members, Orange for Casual) effectively distinguishes user demographics.
 * **Ranking View (Bar Chart):** Utilizes `length` and `aligned vertical position`—the most effective channels for quantitative comparison—to rank station popularity and flow balance.
 
-## Requirement 2: Interactions that Matter
+## 2. Interactions that Matter
 We have implemented interactive features that enable direct task completion without ornamental clutter:
 
 * **Brushing & Filtering:** Users can drag a selection box across the time-series chart. This `brush` interaction triggers an instant update of the Map and Bar Chart, allowing users to isolate specific periods like the morning rush hour.
 * **Details-on-Demand:** Hovering over any visual mark (stations, arcs, or line nodes) reveals precise statistics via `tooltips`. Clicking a station expands a `detailed info panel` with balance metrics and peak usage data.
 * **Search & Auto-Complete:** A search bar allows users to locate specific stations instantly, automatically centering the map and highlighting the station across all views.
+  
+<div style="text-align: center;">
+  <img src="pics/searchbar.png" style="width: 100%;">
+</div>
+
 * **Temporal Animation:** A "Play" button provides an automated walkthrough of the 24-hour cycle, visualizing the dynamic pulse of the city's bike flow.
 
-## Requirement 3: State & Coordination
+## 3. State & Coordination
 Centralized state management ensures the system remains synchronized:
 
 * **Linked Views:** Selecting a station on the map or ranking list updates the entire dashboard. The line chart adapts to show that station's specific temporal profile, while the map filters to its "1-hop neighborhood" (direct connections).
@@ -94,8 +99,20 @@ Our implementation has been evaluated against rigorous quality standards to ensu
 ### Task Efficiency (≤ 3 Steps Principle)
 The dashboard is designed for high operational efficiency, allowing users to extract insights with minimal friction. Primary tasks meet the requirement of being completed in three or fewer deliberate actions:
 * **Task 1: Identifying Peak Hour Distributions:** A user can understand temporal trends in a single step by observing the pre-rendered 24-hour line chart.
+
+<div style="text-align: center;">
+  <img src="pics/time_selection.png" style="width: 90%;">
+</div>
+<!-- <div style="text-align: center;">
+  <img src="pics/timeline.png" style="width: 100%;">
+</div> -->
+
 * **Task 2: Analyzing Station Connectivity:** A user can explore a specific station's network in two steps: first, by searching for or clicking a station, and second, by observing the highlighted flow lines on the map. 
 Both workflows demonstrate that the interface adheres to high-efficiency interaction standards.
+
+<div style="text-align: center;">
+  <img src="pics/BarChart_title.png" style="width: 100%;">
+</div>
 
 ### Clarity of System State
 The system ensures that the active state—including what is filtered, selected, or sorted—is always obvious to the user. We achieve this through dynamic UI elements and descriptive labeling:
