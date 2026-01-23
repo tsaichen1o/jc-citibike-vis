@@ -87,7 +87,33 @@ Centralized state management ensures the system remains synchronized:
 * **Visible Active States:** The current filters are explicitly stated in a "Time Range" badge at the top. Selected stations are highlighted with a distinct `accent color` and increased `marker size` to maintain user context.
 * **Global Reset:** A "Reset All" button returns the system to the global overview state, ensuring a clear path for exploratory re-navigation.
 
-<div style="page-break-after: always; visibility: hidden"> 
+## 4. Quality Bar (Self-Check)
+
+Our implementation has been evaluated against rigorous quality standards to ensure a professional and user-centric experience.
+
+### Task Efficiency (≤ 3 Steps Principle)
+The dashboard is designed for high operational efficiency, allowing users to extract insights with minimal friction. Primary tasks meet the requirement of being completed in three or fewer deliberate actions:
+* **Task 1: Identifying Peak Hour Distributions:** A user can understand temporal trends in a single step by observing the pre-rendered 24-hour line chart.
+* **Task 2: Analyzing Station Connectivity:** A user can explore a specific station's network in two steps: first, by searching for or clicking a station, and second, by observing the highlighted flow lines on the map. 
+Both workflows demonstrate that the interface adheres to high-efficiency interaction standards.
+
+### Clarity of System State
+The system ensures that the active state—including what is filtered, selected, or sorted—is always obvious to the user. We achieve this through dynamic UI elements and descriptive labeling:
+* **Dynamic Titling:** The Bar Chart title updates based on user selection. For example, it defaults to "Top 10 Popular Stations" (sorted in descending order of total traffic) and changes to reflect specific "Destinations" or "Origins" when a station is active.
+* **Instructional Cues:** The temporal view is titled "24-Hour Ride Trends (Drag to filter time range)," providing an explicit hint that helps users utilize the timeline filter more effectively and intuitively.
+* **Visual Highlighting:** Selected elements on the map and bar chart change color and size, providing immediate visual confirmation of the current focus.
+
+### Performance & Responsiveness
+To provide a fluid user experience, the system targets instant feedback (under 200 ms) for all common interactions. This is achieved through:
+* **Efficient Data Handling:** The code utilizes D3’s data-binding (Join) patterns and hardware-accelerated Transition animations.
+* **Asynchronous Updates:** All view modifications are driven through an asynchronous `updateCharts` function. Even with thousands of data points, the filtering logic remains highly responsive, ensuring the UI does not hang during data processing.
+
+### Robustness & Edge Cases
+The design includes specific measures to handle data scale and visual complexity:
+* **Scaling Constraints:** The ranking chart is strictly limited to the "Top 10" items. This avoids UI crowding and ensures legibility even when the dataset contains hundreds of unique stations.
+* **Visual De-cluttering:** The geographic map utilizes a "Bundled Arcs" design. By curving and grouping lines, the system significantly reduces visual chaos and overlap in high-density areas (such as downtown transport hubs), making the underlying patterns easier to discern.
+
+<!-- <div style="page-break-after: always; visibility: hidden"> 
 \pagebreak
 </div>
 
@@ -135,5 +161,5 @@ By isolating Grove St's 1-hop neighborhood, the planner identifies a heavy flow 
 
 <div style="text-align: center;">
   <img src="docs/pics/4.png" style="width: 60%;" alt="1-Hop Network Analysis">
-</div>
+</div> -->
 </div>
