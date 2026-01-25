@@ -51,132 +51,147 @@ input, textarea, select, button {
 
 <div style="font-family: 'Montserrat', sans-serif;">
 
-# **Implementation: Interactive Visual System**
+# **Implementation of Our Design**
 
-> Milestone 4: From Prototype to Working Visualization for Jersey City Citi Bike Analysis
+> Jersey City Citi Bike Dashboard — From Blueprint to Demo-Ready System
 
 <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #0e4378; margin: 20px 0;">
 <strong>Group:</strong> 11  <br/>
 <strong>GitHub Repository:</strong> <a href="https://github.com/tsaichen1o/jc-citibike-vis">https://github.com/tsaichen1o/jc-citibike-vis</a>
 </div>
 
-The system follows the **Information Seeking Mantra**: *Overview first, zoom and filter, then details-on-demand*. The interface is structured into three coordinated zones:
+The system follows the **Information Seeking Mantra**: _Overview first, zoom and filter, then details-on-demand_. The interface is structured into three coordinated zones:
+
 - **Center:** A geographic map visualizing spatial flow.
 - **Bottom:** A time-series chart for temporal trends and interactive filtering.
 - **Side:** A dynamic ranking chart for station-level performance and connectivity analysis.
 
-## 1. Views & Encodings
-The implementation successfully encodes the data abstraction through coordinated visual marks and channels:
+## <span id="system-overview" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">1. System Overview & Visual Encodings</span>
 
-* **Spatial View (Map):** Station locations are encoded as `points` (position). Flows are implemented as `curved arcs`, where `line width` and `opacity` represent trip volume (magnitude), facilitating the identification of major transit corridors.
-* **Temporal View (Line Chart):** Uses `position (vertical)` for trip counts and `position (horizontal)` for the 24-hour cycle. `Color hue` (Blue for Members, Orange for Casual) effectively distinguishes user demographics.
-* **Ranking View (Bar Chart):** Utilizes `length` and `aligned vertical position`—the most effective channels for quantitative comparison—to rank station popularity and flow balance.
+Our implementation follows the design rules (Marks and Channels) to represent data effectively:
 
-## 2. Interactions that Matter
-We have implemented interactive features that enable direct task completion without ornamental clutter:
+- **Spatial View (Map):** Station locations are encoded as `points`. Flows are implemented as `curved arcs` to reduce clutter. The `line width` and `opacity` represent trip volume (magnitude), making major routes stand out clearly.
+- **Temporal View (Line Chart):** We use `vertical position` for trip counts and `horizontal position` for the time of day. To separate user types (Member vs. Casual), we use color hue (Blue and Orange), which is the most effective channel for categorical data.
+- **Ranking View (Bar Chart):** We chose a horizontal bar chart because length and aligned position are the most precise channels for comparing numbers. This allows users to quickly see which stations are the most popular.
 
-* **Brushing & Filtering:** Users can drag a selection box across the time-series chart. This `brush` interaction triggers an instant update of the Map and Bar Chart, allowing users to isolate specific periods like the morning rush hour.
-* **Details-on-Demand:** Hovering over any visual mark (stations, arcs, or line nodes) reveals precise statistics via `tooltips`. Clicking a station expands a `detailed info panel` with balance metrics and peak usage data.
-* **Search & Auto-Complete:** A search bar allows users to locate specific stations instantly, automatically centering the map and highlighting the station across all views.
-  
-<div style="text-align: center;">
-  <img src="pics/searchbar.png" style="width: 100%;">
-</div>
+## <span id="implementation-tasks" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">2. Implementation by Tasks</span>
 
-* **Temporal Animation:** A "Play" button provides an automated walkthrough of the 24-hour cycle, visualizing the dynamic pulse of the city's bike flow.
+We focused our implementation on interactions that directly solve the user's core challenges, avoiding purely ornamental features.
 
-## 3. State & Coordination
-Centralized state management ensures the system remains synchronized:
+### <span id="task-1" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task 1: Compare Distributions (Time Filtering)</span>
 
-* **Linked Views:** Selecting a station on the map or ranking list updates the entire dashboard. The line chart adapts to show that station's specific temporal profile, while the map filters to its "1-hop neighborhood" (direct connections).
-* **Visible Active States:** The current filters are explicitly stated in a "Time Range" badge at the top. Selected stations are highlighted with a distinct `accent color` and increased `marker size` to maintain user context.
-* **Global Reset:** A "Reset All" button returns the system to the global overview state, ensuring a clear path for exploratory re-navigation.
-
-## 4. Quality Bar (Self-Check)
-
-Our implementation has been evaluated against rigorous quality standards to ensure a professional and user-centric experience.
-
-### Task Efficiency (≤ 3 Steps Principle)
-The dashboard is designed for high operational efficiency, allowing users to extract insights with minimal friction. Primary tasks meet the requirement of being completed in three or fewer deliberate actions:
-* **Task 1: Identifying Peak Hour Distributions:** A user can understand temporal trends in a single step by observing the pre-rendered 24-hour line chart.
+- **Challenge:** Users need to isolate specific rush hours (e.g., 8:00 AM) to see how commute patterns change.
+- **Implementation:** We implemented **Brushing** on the line chart and a **Play Animation** button.
+- **Result:** Users can drag a selection box across the time-series chart or watch the daily flow evolve automatically to spot peaks.
 
 <div style="text-align: center;">
-  <img src="pics/time_selection.png" style="width: 90%;">
+  <img src="pics/brushing.png" style="width: 75%;">
 </div>
-<!-- <div style="text-align: center;">
-  <img src="pics/timeline.png" style="width: 100%;">
-</div> -->
 
-* **Task 2: Analyzing Station Connectivity:** A user can explore a specific station's network in two steps: first, by searching for or clicking a station, and second, by observing the highlighted flow lines on the map. 
-Both workflows demonstrate that the interface adheres to high-efficiency interaction standards.
+### <span id="task-2" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task 2: Summarize Flows (Spatial Overview)</span>
+
+- **Challenge:** The raw data creates a messy "hairball" on the map, making it hard to see main routes.
+- **Implementation:** We used **Curved Arcs** with opacity mapping and enabled **Zoom & Pan**.
+- **Result:** Major commuting arteries are visually distinct. Zooming allows users to inspect dense areas without losing context.
 
 <div style="text-align: center;">
-  <img src="pics/BarChart_title.png" style="width: 100%;">
+  <img src="pics/show-curve.png" style="width: 75%;">
 </div>
 
-### Clarity of System State
-The system ensures that the active state—including what is filtered, selected, or sorted—is always obvious to the user. We achieve this through dynamic UI elements and descriptive labeling:
-* **Dynamic Titling:** The Bar Chart title updates based on user selection. For example, it defaults to "Top 10 Popular Stations" (sorted in descending order of total traffic) and changes to reflect specific "Destinations" or "Origins" when a station is active.
-* **Instructional Cues:** The temporal view is titled "24-Hour Ride Trends (Drag to filter time range)," providing an explicit hint that helps users utilize the timeline filter more effectively and intuitively.
-* **Visual Highlighting:** Selected elements on the map and bar chart change color and size, providing immediate visual confirmation of the current focus.
+### <span id="task-3" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task 3: Rank Stations (Lookup & Locate)</span>
 
-### Performance & Responsiveness
-To provide a fluid user experience, the system targets instant feedback (under 200 ms) for all common interactions. This is achieved through:
-* **Efficient Data Handling:** The code utilizes D3’s data-binding (Join) patterns and hardware-accelerated Transition animations.
-* **Asynchronous Updates:** All view modifications are driven through an asynchronous `updateCharts` function. Even with thousands of data points, the filtering logic remains highly responsive, ensuring the UI does not hang during data processing.
-
-### Robustness & Edge Cases
-The design includes specific measures to handle data scale and visual complexity:
-* **Scaling Constraints:** The ranking chart is strictly limited to the "Top 10" items. This avoids UI crowding and ensures legibility even when the dataset contains hundreds of unique stations.
-* **Visual De-cluttering:** The geographic map utilizes a "Bundled Arcs" design. By curving and grouping lines, the system significantly reduces visual chaos and overlap in high-density areas (such as downtown transport hubs), making the underlying patterns easier to discern.
-
-<!-- <div style="page-break-after: always; visibility: hidden"> 
-\pagebreak
-</div>
-
-### <span id="task1" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task 1: Compare Distributions (Member vs. Casual Trends)</span>
-The system enables users to identify behavioral differences between user groups. By observing the line chart, users can see that Members peak during commute hours (8 AM/5 PM), while Casual users show a smoother distribution throughout the day.
-
-### <span id="task2" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task 2: Summarize Flows (OD Connectivity)</span>
-Using the curved arc map, the system reveals geographic patterns. Users can identify major routes (e.g., residential areas to transit hubs) through line thickness, with transparency handling high-density overlap.
-
-### <span id="task3" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task 3: Rank Stations (Identify Top Hubs)</span>
-The bar chart reorders dynamically based on user filters. It helps planners identify which stations are the primary "sinks" or "sources" of bike traffic at any given time.
-
-### <span id="task4" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task 4: Analyze Connectivity (1-Hop Neighborhoods)</span>
-When a station is selected, the map isolates its immediate network. This removes background noise and shows the specific "reach" of a station, helping to evaluate local network resilience.
-
-<div style="page-break-after: always; visibility: hidden"> 
-\pagebreak
-</div>
-
-## <span id="project-vision" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">Storyboard: Optimizing the Morning Commute</span>
-
-**1. Global Overview:**
-An urban planner opens the dashboard to see the full month's data. The initial view shows high density around Grove St and Newport.
+- **Challenge:** Finding a specific station among hundreds is difficult.
+- **Implementation:** We added a **Search Bar with Auto-Complete**.
+- **Result:** Users can type a name (e.g., "Grove") to instantly locate a station. The map automatically centers on it, and the station highlights in red.
 
 <div style="text-align: center;">
-  <img src="docs/pics/1.png" style="width: 60%;" alt="Dashboard Overview">
+  <img src="pics/searchbar.png" style="width: 75%;">
 </div>
 
-**2. Temporal Filtering:**
-The planner notices a Member spike at 8 AM and brushes this range on the line chart. The map updates to show only rush-hour flows.
+### <span id="task-4" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task 4: Analyze Connectivity (1-Hop Context)</span>
+
+- **Challenge:** Users need to understand both the _network context_ (where do riders go?) and the _specific metrics_ (what is the exact volume?) of a station.
+- **Implementation:** We implemented **Linked Filtering** and **Details-on-Demand** interactions.
+- **Result:** Hovering over any visual mark reveals precise statistics via `tooltips`. Clicking a bar isolates that station's **1-hop neighborhood** on the map and expands a **detailed info panel** with balance metrics, effectively filtering out noise to focus on deep insights.
 
 <div style="text-align: center;">
-  <img src="docs/pics/2.png" style="width: 60%;" alt="Time Brush Filtering">
+  <img src="pics/tooltip.png" style="width: 75%;">
 </div>
 
-**3. Identifying Hubs:**
-The Bar Chart reorders, revealing "Grove St PATH" as the top destination. The planner clicks this bar to isolate the station on the map.
+## <span id="state-coordination" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">3. State & Coordination</span>
+
+To ensure the user never gets lost, we implemented a centralized state management system:
+
+- **Linked Views:** All three views (Map, Line, Bar) are synchronized: selecting a station on the map or ranking list updates the entire dashboard. The line chart adapts to show that station's specific temporal profile, while the map filters to its "1-hop neighborhood" (direct connections).
+- **Visual Feedback:**
+    - **Active State:** When a station is selected, it turns Red and increases in size (radius).
+    - **Inactive State:** Unselected elements fade out (reduced opacity) to make the active data pop out.
+- **Global Reset:** A "Reset All" trigger ensures users can easily return to the initial overview state after exploring deep details.
+
+## <span id="quality-bar" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2C3E50; border-bottom: 2px solid #0e4378; padding-bottom: 8px; display: block;">4. Quality Bar (Self-Check)</span>
+
+Our implementation has been evaluated against the project requirements to ensure a high-quality user experience.
+
+### <span id="quality-efficiency" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Task Efficiency (≤ 3 Steps Principle)</span>
+
+We designed the dashboard so users can finish tasks quickly. All primary tasks require 3 or fewer actions:
+
+- **Task 1 (Time Trends): 1 Step.** Users can see the peak hours immediately by looking at the line chart.
 
 <div style="text-align: center;">
-  <img src="docs/pics/3.png" style="width: 60%;" alt="Station Ranking and Selection">
+  <img src="pics/see-peak-hour.png" style="width: 75%;">
 </div>
 
-**4. Discovering Insights:**
-By isolating Grove St's 1-hop neighborhood, the planner identifies a heavy flow from residential Hamilton Park, but a lack of connectivity from newer developments, suggesting a site for a new station.
+- **Task 2 & 4 (Connectivity): 2 Steps.** First, click a station (or search for it); second, look at the highlighted map lines.
 
 <div style="text-align: center;">
-  <img src="docs/pics/4.png" style="width: 60%;" alt="1-Hop Network Analysis">
-</div> -->
+  <img src="pics/BarChart_title.png" style="width: 75%;">
+</div>
+
+When the user clicks the bar for **Grove St PATH**, the ranking view locks that station as the focus and the map immediately redraws the flows originating from that station.
+
+<div style="text-align: center;">
+  <img src="pics/after-click.png" style="width: 75%;">
+</div>
+
+- **Task 3 (Lookup): 2 Steps.** Type the name in the search bar and press enter.
+
+<div style="text-align: center;">
+  <img src="pics/search-newport.png" style="width: 75%;">
+</div>
+
+Here we type **Newport PATH** in the search bar; the ranking list and map jump to that station and highlight its location.
+
+<div style="text-align: center;">
+  <img src="pics/search-newport-result.png" style="width: 75%;">
+</div>
+
+### <span id="quality-encodings" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Effective Encodings</span>
+
+- **Position & Length:** We used the most accurate visual channels for our most important data. The **Bar Chart uses Length** to compare popularity, and the **Line Chart uses Vertical Position** to compare ride counts. This makes comparisons precise and easy.
+
+### <span id="robustness" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Robustness: Edge Cases & Data Quality</span>
+
+We specifically addressed potential data issues and layout challenges:
+
+- **Data Outliers:** We filtered out trips with unrealistic durations (e.g., < 1 minute or > 24 hours). This ensures that our trends are not skewed by broken bikes or system errors.
+- **Long Labels:** Jersey City station names can be very long (e.g., "Christopher Columbus Dr at..."). We used a **Horizontal Bar Chart** instead of a vertical one to ensure these names are readable and never cut off.
+- **Data Scale:** To prevent information overload, we cap the ranking list at the Top 10. This ensures the UI remains clean even though the dataset contains hundreds of stations.
+
+### <span id="quality-scale" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Performance & Responsiveness</span>
+
+To ensure instant feedback (<200ms) even with large datasets, we implemented specific optimization strategies:
+
+- **Data Aggregation (Binning):** We do not render raw trip data. Instead, the system dynamically aggregates thousands of individual trips into weighted station-to-station flows (arcs) and station counts. This drastically reduces the number of DOM elements the browser needs to render.
+- **Efficient Data Binding:** We utilize D3’s **Enter-Update-Exit** pattern. When filtering, the system only modifies the DOM elements that actually change (e.g., updating bar lengths) rather than destroying and rebuilding the entire visualization tree.
+- **Asynchronous Updates:** All view modifications are driven through an asynchronous `updateCharts` function. Even with thousands of data points, the filtering logic remains highly responsive, ensuring the UI does not hang during data processing.
+
+### <span id="quality-scale" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #34495E; border-bottom: 1px solid #BDC3C7; padding-bottom: 4px; display: block;">Accessibility & Clarity</span>
+
+We ensured the design is readable and accessible to a wide range of users:
+
+- **Color Blindness Safe:** We chose Blue and Orange for the user groups. These colors are distinct not only in hue but also in luminance, making them distinguishable even for colorblind users or in greyscale mode.
+- **Dynamic Titling:** The Bar Chart title changes to show context (e.g., "Top 10 Destinations from [Station Name]").
+- **Instructional Cues:** The chart title explicitly says "Drag to filter," teaching users how to interact.
+
 </div>
